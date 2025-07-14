@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4 in a Row - Made By Yusuf</title>
+    <style>
+        :root {
+            --player1-color: #ff5252;
+            --player2-color: #4285f4;
+            --board-color: #1565c0;
+            --cell-color: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --text-color: white;
+            --cell-size: 50px;
+            --grid-gap: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: black;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .players-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 25px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            transition: all 0.3s ease;
+            width: 45%;
+        }
+
+        .player.active {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px var(--shadow-color);
+        }
+
+        .player1 {
+            border-bottom: 5px solid var(--player1-color);
+        }
+
+        .player2 {
+            border-bottom: 5px solid var(--player2-color);
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .player-token {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-top: 5px;
+        }
+
+        .player1 .player-token {
+            background-color: var(--player1-color);
+            box-shadow: 0 0 10px var(--player1-color);
+        }
+
+        .player2 .player-token {
+            background-color: var(--player2-color);
+            box-shadow: 0 0 10px var(--player2-color);
+        }
+
+        .game-board {
+            background-color: var(--board-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: var(--grid-gap);
+            position: relative;
+            z-index: 1;
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background-color: var(--cell-color);
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease;
+            box-shadow: inset 0 -5px 5px var(--shadow-color);
+        }
+
+        .cell:hover {
+            transform: translateY(-5px);
+        }
+
+        .token {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transform: translateY(-1000px); /* Start off-screen */
+        }
+
+        .player1-token {
+            background-color: var(--player1-color);
+            box-shadow: 0 0 15px var(--player1-color);
+        }
+
+        .player2-token {
+            background-color: var(--player2-color);
+            box-shadow: 0 0 15px var(--player2-color);
+        }
+
+        .drop-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2c3e50;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        button:hover {
+            background-color: #34495e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px var(--shadow-color);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            animation: modalAppear 0.4s ease;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .winner-color {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+
+        .input-name {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --cell-size: 40px;
+                --grid-gap: 6px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .player-name {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --cell-size: 30px;
+                --grid-gap: 4px;
+            }
+            
+            .game-board {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>4 in a Row - Made By Yusuf</h1>
+         <h6>tunggu animasi memantul selesai lalu tekan tempat yang anda inginkan dari atas</h6><br>
+    
+    <div class="game-container">
+        <div class="players-info">
+            <div class="player player1 active" id="player1">
+                <div class="player-name" id="player1-name">Player 1</div>
+                <div class="player-token"></div>
+            </div>
+            <div class="player player2" id="player2">
+                <div class="player-name" id="player2-name">Player 2</div>
+                <div class="player-token"></div>
+            </div>
+        </div>
+        
+        <div class="game-board">
+            <div class="board-grid" id="board"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="reset-btn">Reset Game</button>
+            <button id="change-names-btn">Change Names</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="winner-modal">
+        <div class="modal-content">
+            <h2 id="winner-text">Player 1 Wins!</h2>
+            <div id="winner-token" class="winner-color"></div>
+            <button id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="name-modal">
+        <div class="modal-content">
+            <h2>Change Player Names</h2>
+            <div style="margin-bottom: 15px;">
+                <label for="player1-input">Player 1 (Red):</label>
+                <input type="text" id="player1-input" class="input-name" value="Player 1">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label for="player2-input">Player 2 (Blue):</label>
+                <input type="text" id="player2-input" class="input-name" value="Player 2">
+            </div>
+            <button id="save-names-btn">Save Names</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game state
+            const ROWS = 10;
+            const COLS = 10;
+            let board = Array(ROWS).fill().map(() => Array(COLS).fill(null));
+            let currentPlayer = 1;
+            let gameOver = false;
+            let player1Name = "Player 1";
+            let player2Name = "Player 2";
+            let animationInProgress = false;
+            
+            // Physics constants
+            const GRAVITY = 1.2;
+            const BOUNCE_FACTOR = 0.6;
+            const DAMPING = 0.8;
+            const ANIMATION_SPEED = 1.5;
+            
+            // DOM elements
+            const boardElement = document.getElementById('board');
+            const player1Element = document.getElementById('player1');
+            const player2Element = document.getElementById('player2');
+            const player1NameElement = document.getElementById('player1-name');
+            const player2NameElement = document.getElementById('player2-name');
+            const resetBtn = document.getElementById('reset-btn');
+            const changeNamesBtn = document.getElementById('change-names-btn');
+            const winnerModal = document.getElementById('winner-modal');
+            const winnerText = document.getElementById('winner-text');
+            const winnerToken = document.getElementById('winner-token');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const nameModal = document.getElementById('name-modal');
+            const player1Input = document.getElementById('player1-input');
+            const player2Input = document.getElementById('player2-input');
+            const saveNamesBtn = document.getElementById('save-names-btn');
+            
+            // Initialize the game board
+            function initBoard() {
+                boardElement.innerHTML = '';
+                
+                // Create all cells (10x10 grid)
+                for (let row = 0; row < ROWS; row++) {
+                    for (let col = 0; col < COLS; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // Only top row is clickable initially
+                        if (row === 0) {
+                            cell.addEventListener('click', () => handleCellClick(col));
+                            cell.addEventListener('mouseenter', () => {
+                                if (!gameOver && !animationInProgress) {
+                                    showDropIndicator(col);
+                                }
+                            });
+                            cell.addEventListener('mouseleave', hideDropIndicator);
+                        }
+                        
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+            
+            // Handle cell click (column drop)
+            async function handleCellClick(col) {
+                if (gameOver || animationInProgress) return;
+                
+                const row = getTopEmptyRow(col);
+                if (row === -1) return; // Column is full
+                
+                animationInProgress = true;
+                hideDropIndicator();
+                
+                // Create the token
+                const targetCell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+                const token = document.createElement('div');
+                token.className = `token ${currentPlayer === 1 ? 'player1-token' : 'player2-token'}`;
+                targetCell.appendChild(token);
+                
+                // Animate from top to target position
+                await animateTokenDrop(token, row, col);
+                
+                // Update game state
+                board[row][col] = currentPlayer;
+                
+                // Check for win
+                if (checkWin(row, col)) {
+                    gameOver = true;
+                    showWinner();
+                    animationInProgress = false;
+                    return;
+                }
+                
+                // Check for draw
+                if (checkDraw()) {
+                    gameOver = true;
+                    showDraw();
+                    animationInProgress = false;
+                    return;
+                }
+                
+                // Switch player
+                switchPlayer();
+                animationInProgress = false;
+            }
+            
+            // Improved token drop animation with physics
+            function animateTokenDrop(token, targetRow, col) {
+                return new Promise((resolve) => {
+                    const startTime = performance.now();
+                    const duration = 600 / ANIMATION_SPEED; // ms
+                    const startY = -1000; // Start above the board
+                    const cellHeight = parseFloat(getComputedStyle(document.documentElement)
+                        .getPropertyValue('--cell-size'));
+                    const gapHeight = parseFloat(getComputedStyle(document.documentElement)
+                        .getPropertyValue('--grid-gap'));
+                    const totalCellHeight = cellHeight + gapHeight;
+                    const targetY = 0;
+                    
+                    let lastTime = startTime;
+                    let position = startY;
+                    let velocity = 0;
+                    let bouncing = false;
+                    
+                    const animateFrame = (currentTime) => {
+                        const deltaTime = (currentTime - lastTime) / 16; // Normalized
+                        lastTime = currentTime;
+                        
+                        // Apply gravity
+                        velocity += GRAVITY * deltaTime;
+                        
+                        // Update position
+                        position += velocity * deltaTime;
+                        
+                        // Check if we've reached the target
+                        if (position >= targetY) {
+                            if (!bouncing) {
+                                // First hit - bounce
+                                velocity = -velocity * BOUNCE_FACTOR;
+                                position = targetY;
+                                bouncing = true;
+                            } else {
+                                // Subsequent bounces - dampen
+                                velocity = -velocity * DAMPING;
+                                position = targetY;
+                                
+                                // Stop animation when velocity is small enough
+                                if (Math.abs(velocity) < 0.5) {
+                                    token.style.transform = 'translateY(0)';
+                                    resolve();
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        token.style.transform = `translateY(${position}px)`;
+                        requestAnimationFrame(animateFrame);
+                    };
+                    
+                    // Start animation
+                    requestAnimationFrame(animateFrame);
+                });
+            }
+            
+            // Get the top empty row in a column
+            function getTopEmptyRow(col) {
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    if (board[row][col] === null) {
+                        return row;
+                    }
+                }
+                return -1; // Column is full
+            }
+            
+            // Show drop indicator
+            function showDropIndicator(col) {
+                hideDropIndicator(); // Clear any existing indicator
+                
+                const topCell = document.querySelector(`.cell[data-row="0"][data-col="${col}"]`);
+                const indicator = document.createElement('div');
+                indicator.className = `drop-indicator ${currentPlayer === 1 ? 'player1-token' : 'player2-token'}`;
+                indicator.id = 'drop-indicator';
+                topCell.appendChild(indicator);
+            }
+            
+            // Hide drop indicator
+            function hideDropIndicator() {
+                const indicator = document.getElementById('drop-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+            
+            // Check for a win
+            function checkWin(row, col) {
+                const directions = [
+                    [0, 1],  // Horizontal
+                    [1, 0],  // Vertical
+                    [1, 1],  // Diagonal down-right
+                    [1, -1]   // Diagonal down-left
+                ];
+                
+                for (const [dx, dy] of directions) {
+                    let count = 1;
+                    
+                    // Check in positive direction
+                    for (let i = 1; i < 4; i++) {
+                        const newRow = row + i * dx;
+                        const newCol = col + i * dy;
+                        if (
+                            newRow >= 0 && newRow < ROWS &&
+                            newCol >= 0 && newCol < COLS &&
+                            board[newRow][newCol] === currentPlayer
+                        ) {
+                            count++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // Check in negative direction
+                    for (let i = 1; i < 4; i++) {
+                        const newRow = row - i * dx;
+                        const newCol = col - i * dy;
+                        if (
+                            newRow >= 0 && newRow < ROWS &&
+                            newCol >= 0 && newCol < COLS &&
+                            board[newRow][newCol] === currentPlayer
+                        ) {
+                            count++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    if (count >= 4) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            
+            // Check for a draw
+            function checkDraw() {
+                return board[0].every(cell => cell !== null);
+            }
+            
+            // Switch players
+            function switchPlayer() {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                updatePlayerUI();
+            }
+            
+            // Update player UI (active player highlight)
+            function updatePlayerUI() {
+                if (currentPlayer === 1) {
+                    player1Element.classList.add('active');
+                    player2Element.classList.remove('active');
+                } else {
+                    player1Element.classList.remove('active');
+                    player2Element.classList.add('active');
+                }
+            }
+            
+            // Show winner modal
+            function showWinner() {
+                const winnerName = currentPlayer === 1 ? player1Name : player2Name;
+                winnerText.textContent = `${winnerName} Wins!`;
+                winnerToken.className = `winner-color ${currentPlayer === 1 ? 'player1-token' : 'player2-token'}`;
+                winnerToken.style.display = 'inline-block';
+                
+                const sound = document.getElementById('win-sound');
+                if (sound) sound.play();
+
+                // Confetti animation
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    }, i * 300);
+                }
+
+                winnerModal.style.display = 'flex';
+            }
+            
+            // Show draw modal
+            function showDraw() {
+                winnerText.textContent = "It's a Draw!";
+                winnerToken.style.display = 'none';
+                
+                const sound = document.getElementById('win-sound');
+                if (sound) sound.play();
+
+                // Confetti animation
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    }, i * 300);
+                }
+
+                winnerModal.style.display = 'flex';
+            }
+            
+            // Reset the game
+            function resetGame() {
+                board = Array(ROWS).fill().map(() => Array(COLS).fill(null));
+                currentPlayer = 1;
+                gameOver = false;
+                animationInProgress = false;
+                
+                // Clear the board UI
+                boardElement.innerHTML = '';
+                initBoard();
+                
+                updatePlayerUI();
+                winnerModal.style.display = 'none';
+            }
+            
+            // Change player names
+            function changeNames() {
+                player1Input.value = player1Name;
+                player2Input.value = player2Name;
+                nameModal.style.display = 'flex';
+            }
+            
+            // Save new player names
+            function saveNames() {
+                player1Name = player1Input.value.trim() || "Player 1";
+                player2Name = player2Input.value.trim() || "Player 2";
+                
+                player1NameElement.textContent = player1Name;
+                player2NameElement.textContent = player2Name;
+                
+                nameModal.style.display = 'none';
+            }
+            
+            // Event listeners
+            resetBtn.addEventListener('click', resetGame);
+            changeNamesBtn.addEventListener('click', changeNames);
+            playAgainBtn.addEventListener('click', resetGame);
+            saveNamesBtn.addEventListener('click', saveNames);
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === winnerModal) {
+                    winnerModal.style.display = 'none';
+                }
+                if (e.target === nameModal) {
+                    nameModal.style.display = 'none';
+                }
+            });
+            
+            // Initialize the game
+            initBoard();
+            updatePlayerUI();
+        });
+    </script>
+
+<audio id="win-sound" src="https://cdn.pixabay.com/audio/2022/10/03/audio_9b8b1d1b13.mp3"></audio>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+</body>
+</html>
+```
+    
